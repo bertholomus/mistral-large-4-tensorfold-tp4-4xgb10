@@ -12,5 +12,7 @@ from tensorfold.cuda.exl3 import experts as X
 X._ext(); print('experts', round(time.time() - t), flush=True)
 from tensorfold.cuda.exl3 import linear as L
 L._ext(); print('linear', round(time.time() - t), flush=True)
+from tensorfold.cuda.exl3 import prefetch as F
+F._ext(); print('prefetch', round(time.time() - t), flush=True)
 from tensorfold.cuda import rdma as RD
 RD._ext(); print('rdma', round(time.time() - t), flush=True)

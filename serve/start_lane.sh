@@ -3,7 +3,7 @@
 #   start_lane.sh [tag] [tensorfold serve args, such as --host 0.0.0.0]
 #   ML4_HOSTS          the four nodes in rank order (default: spark1 spark2 spark3 spark4)
 #   ML4_MASTER_PORT    rank 0's rendezvous port (default: 29561)
-#   ML4_TREE ML4_PACK ML4_MASTER ML4_IFNAME ML4_HCA as in tools/ml4/cp4_serve.sh of the engine; the same on every node
+#   ML4_TREE ML4_PACK ML4_MASTER ML4_IFNAME ML4_HCA DRAFT as in tools/ml4/cp4_serve.sh of the engine; the same on every node
 set -eu
 : "${ML4_TREE:?set ML4_TREE}" "${ML4_PACK:?set ML4_PACK}" "${ML4_MASTER:?set ML4_MASTER}"
 : "${ML4_IFNAME:?set ML4_IFNAME}" "${ML4_HCA:?set ML4_HCA}"
@@ -13,7 +13,7 @@ ARGS="$*"
 PORT="${ML4_MASTER_PORT:-29561}"
 read -r -a HOSTS <<< "${ML4_HOSTS:-spark1 spark2 spark3 spark4}"
 [ "${#HOSTS[@]}" -eq 4 ] || { echo "ML4_HOSTS needs four nodes" >&2; exit 2; }
-VARS="ML4_TREE=$ML4_TREE ML4_PACK=$ML4_PACK ML4_MASTER=$ML4_MASTER ML4_IFNAME=$ML4_IFNAME ML4_HCA=$ML4_HCA EXTRA='${EXTRA:-}'"
+VARS="ML4_TREE=$ML4_TREE ML4_PACK=$ML4_PACK ML4_MASTER=$ML4_MASTER ML4_IFNAME=$ML4_IFNAME ML4_HCA=$ML4_HCA DRAFT=${DRAFT:-1} EXTRA='${EXTRA:-}'"
 for r in 0 1 2 3; do
   ssh "${HOSTS[$r]}" "mkdir -p $ML4_TREE/logs $ML4_TREE/rank-cache; ($VARS nohup bash $ML4_TREE/src/tensorfold/tools/ml4/cp4_serve.sh $r $TAG $PORT $ARGS \
     > /dev/null 2>&1 < /dev/null &)"
