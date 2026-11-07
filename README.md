@@ -15,8 +15,7 @@ model's full 1,048,576-token context on one stream.**
 **Engine:** commit `f4a30b3e` on
 [bertholomus/TensorFold, branch `mistral-large-4-tp4`](https://github.com/bertholomus/TensorFold/tree/mistral-large-4-tp4):
 our `mistral_large4` family on TensorFold 0.6.6's Python CUDA engine, on top of our DeepSeek-V4.1 engine line. It holds
-the code we served and measured, less our internal notes and paths and one private memory setting
-(see [Exported build](#exported-build)). The model math follows the
+the code we served and measured, less our internal notes and paths (see [Exported build](#exported-build)). The model math follows the
 Mistral Large 4 reference in Hugging Face Transformers.
 
 Mistral Large 4 has 72 layers, MLA attention with a sparse indexer (top 2,048 rows), 128 routed experts (4 active) and
@@ -68,10 +67,8 @@ The head keeps about 2.5 tokens a step on code, 2.1 on the essay and 3.3 on fill
 
 Four GB10 nodes (128 GB of unified memory each) on a 200 Gb/s RoCE fabric, GPU clocks capped at 2,300 MHz, draft head on,
 greedy (temperature 0) unless a row says otherwise. Tools are in the engine's `tools/ml4/`. Every row below ran on this engine
-commit with the launch line in this README, after a start from an empty folder ([Exported build](#exported-build)), except the
-two hours of mixed load. That ran on the build the commit was exported from, with 15 % more cache rows from a private memory
-setting that is not in the export. On one build, with and without that setting, one stream ran at the same speed and gave the
-same greedy tokens.
+commit with the launch line in this README, after a start from an empty folder ([Exported build](#exported-build)), the two
+hours of mixed load included.
 
 **Decode by text** (`cp4_ask.py --max-tokens 800 --effort low`; tok/s, a range over three runs). Code asks the model to
 explain the source of a serving engine, the essay sets a work log aside and writes on suspension bridges, and filler
@@ -115,16 +112,15 @@ another, so the eight first tokens came up to 284.7 s after the start. Eight str
 | 1,044,260 tokens, once about 900,000 are in | 5 | 2.8-3.0 s | 803.5 s |
 
 **Two hours of mixed load** (`cp4_load.py soak --seconds 7200 --long 300000`): four chat loops, a loop of prompts up to 128K and a loop of prompts up to 300K, all at once for the whole two hours.
-1,378 chats, 13 prompts of 66,019-124,213 tokens and 3 long prompts: **0 errors, no out-of-memory, no hang**. With the lane this
-full every prompt waits its turn. A chat's first token came in a median of 2.67 s, with a slowest of 39.1 s. Prompts of up to
-124K took 259-772 s, and the long ones 1,566 s (155,709 tokens), 2,485 s (223,096) and 3,106 s (269,593).
+1,379 chats, 13 prompts of 66,019-124,213 tokens and 3 long prompts: **0 errors, no out-of-memory, no hang**. With the lane this
+full every prompt waits its turn. A chat's first token came in a median of 2.68 s, with a slowest of 30.6 s. Prompts of up to
+124K took 265-772 s, and the long ones 1,544 s (155,709 tokens), 2,527 s (223,096) and 3,093 s (269,593).
 
 **Finding things in a long prompt** (`cp4_ask.py`, three registration codes hidden in a long text, one run each):
 3 of 3 at 1,044,260 tokens and 3 of 3 at 120,163 tokens.
 
 **Heat and memory** (each node sampled every 2 to 5 s): through all the rows above, highest temperature 84, 81, 86 and 82 °C and lowest MemAvailable 6.63, 6.82,
-6.75 and 6.68 GiB. Through the two hours of load, 81, 78, 81 and 83 °C and 6.42, 5.97, 6.71 and 6.55 GiB, with reserved memory at
-102.49 GiB at most. A wide prompt round waits for a rank at 85 °C (`TF_ML4_CP_MAX_TEMP`): that happened 55 times in the rows, all
+6.75 and 6.68 GiB. Through the two hours of load, 80, 79, 80 and 83 °C and 6.80, 7.07, 7.27 and 7.13 GiB. A wide prompt round waits for a rank at 85 °C (`TF_ML4_CP_MAX_TEMP`): that happened 55 times in the rows, all
 but two on one node, and not at all in the two hours.
 
 **Chat and tools** (`tools/ml4_step4_chat.py`): 6 of 6: plain chat, a multi-turn exchange, a coding task checked by
@@ -264,10 +260,9 @@ python3 -m tensorfold serve "$ML4_PACK" --tp 4 --rank <r> --master "$ML4_MASTER"
 
 We started this engine commit from an empty folder on our four nodes with the steps above: clone, `prebuild.sh`,
 `start_lane.sh`, with nothing kept from the working tree, not even a rank cache. `prebuild.sh` built eight extensions in 216-222 s on each node, the first start took 136 s and a start from the rank cache
-26 s. Every row in [Measured](#measured) but the two hours of load ran on that lane, and its greedy replies on 12 prompts (1,130
+26 s. Every row in [Measured](#measured), the two hours of load included, ran on that lane, and its greedy replies on 12 prompts (1,130
 tokens, `cp4_greedy.py`) were the same tokens before and after those rows, and the same as with the head off. The source differs from the
-build we ran the two hours of load on in comments, log text, paths and the private memory setting of [Measured](#measured): a token-level
-comparison of the code, with that setting's two commits left out, finds no other change. That run used our nodes' copy of the
+build we developed on in comments, log text and paths only. That run used our nodes' copy of the
 pack, whose manifest differs from the published one in two text fields.
 
 ## Credits
